@@ -1,48 +1,30 @@
-const Voting = artifacts.require("Voting");
-const { BN, expectEvent, expectRevert } = require("@openzeppelin/test-helpers");
-const { expect } = require("chai");
+# Test unit explications Projet #2
 
-/*
- * uncomment accounts to access the test accounts made available by the
- * Ethereum client
- * See docs: https://www.trufflesuite.com/docs/truffle/testing/writing-tests-in-javascript
- */
-contract("Voting", function (accounts) {
-  let contractIstance;
-  const owner = accounts[0];
-  const account1 = accounts[1];
-  const zero = new BN(0);
-  const one = new BN(1);
+### Testing revert for `getVoter()` & `getOneProposal(uint)`
 
-  const notVoter = "You're not a voter";
-  const notOwner = "Ownable: caller is not the owner";
-  const VotingSessionNotStarted = "Voting session havent started yet.";
-  const desc = "My proposal !";
-
-  // expectRevert(contractIstance.getVoter(addr, {from}), "")
-
-  // expectEvent(tx, "eventName", {param: ""})
-
-  beforeEach(async () => {
-    contractIstance = await Voting.new();
-  });
-
-  it("should revert getter because onlyVoters modifier is used", async () => {
-    await expectRevert(
-      contractIstance.getVoter(owner, { from: owner }),
-      notVoter
-    );
-
-    await expectRevert(
-      contractIstance.getOneProposal(0, { from: owner }),
-      notVoter
+```
+   it("should revert because onlyVoters modifier is used", async () => {
+    const r = await expectRevert(
+      contractIstance.getVoter(owner, { from: registeredAccount }),
+      "You're not a voter"
     );
   });
+```
 
-  it("should add voter", async () => {
+### Testing add voters
+
+1. Check revert onlyOwner modifier from openzeppelin
+2. Add new voter
+3. Check revert if the voter is already registered
+4. Check if the event is emit
+5. Get voter and check if voter is registered
+6. Change `WorkflowStatus` and check the revert sorkflow status
+
+```
+ it("should add voter", async () => {
     await expectRevert(
       contractIstance.addVoter(owner, { from: account1 }),
-      notOwner
+      "Ownable: caller is not the owner"
     );
 
     const tx = await contractIstance.addVoter(owner);
@@ -57,9 +39,21 @@ contract("Voting", function (accounts) {
     await expectRevert(
       contractIstance.addVoter(owner),
       "Voters registration is not open yet"
-    );
+      );
   });
+```
 
+### Testing add proposal
+
+1. Check revert caller is not voter
+2. Check revert work flow proposals need to be `ProposalsRegistrationStarted`
+3. Check revert description !== empty
+4. Add proposal
+5. Check if `ProposalRegistered` event id emit
+6. Get proposal by `Id`
+7. Expect proposal description
+
+```
   it("should add proposal", async () => {
     await expectRevert(contractIstance.addProposal(""), notVoter);
     await contractIstance.addVoter(owner);
@@ -75,6 +69,7 @@ contract("Voting", function (accounts) {
       "Vous ne pouvez pas ne rien proposer"
     );
 
+    const desc = "My proposal !";
     const tx = await contractIstance.addProposal(desc);
 
     await expectEvent(tx, "ProposalRegistered");
@@ -83,12 +78,27 @@ contract("Voting", function (accounts) {
 
     expect(proposal.description).to.equal(desc);
   });
+```
 
+### Testing set vote
+
+1. Check revert caller is not voter
+2. Check revert work flow proposals need to be `VotingSessionStarted`
+3. Change proposal work flow and add proposal
+4. Change proposal work flow to start voting session
+5. Check revert if `proposalId` does't exists
+6. Check proposal `voteCount` after and before the `setVote`
+7. Check if Voted event id emit
+
+```
   it("should set a vote", async () => {
     await expectRevert(contractIstance.setVote(0), notVoter);
 
     await contractIstance.addVoter(owner);
-    await expectRevert(contractIstance.setVote(0), VotingSessionNotStarted);
+    await expectRevert(
+      contractIstance.setVote(0),
+      "Voting session havent started yet"
+    );
 
     await contractIstance.startProposalsRegistering();
     await contractIstance.addProposal(desc);
@@ -99,25 +109,29 @@ contract("Voting", function (accounts) {
     await expectRevert(contractIstance.setVote(42), "Proposal not found");
 
     let proposal = await contractIstance.getOneProposal(1);
-    expect(proposal.voteCount).to.be.bignumber.equal(zero);
+    expect(proposal.voteCount).to.be.bignumber.equal(new BN(0));
 
     const tx = await contractIstance.setVote(1);
 
     proposal = await contractIstance.getOneProposal(1);
-    expect(proposal.voteCount).to.be.bignumber.equal(one);
+    expect(proposal.voteCount).to.be.bignumber.equal(new BN(1));
 
     await expectEvent(tx, "Voted");
   });
+```
 
-  it("should change work flow to start proposals registering", async () => {
+### Testing change work flow to start proposals registering
+
+1. Add owner to voters
+2. Check revert onlyOwner modifier from openzeppelin
+3. Change workflow to start proposals registering
+4. Check revert if call `startProposalsRegistering` without `RegisteringVoters` status
+5. Check if `WorkflowStatusChange` is emit
+6. Check if the proposal genesis was create
+
+```
+it("should change work flow to start proposals registering", async () => {
     await contractIstance.addVoter(owner);
-    await expectRevert(
-      contractIstance.startProposalsRegistering({
-        from: account1,
-      }),
-      notOwner
-    );
-
     const tx = await contractIstance.startProposalsRegistering();
 
     await expectRevert(
@@ -131,8 +145,17 @@ contract("Voting", function (accounts) {
 
     expect(proposal.description).to.equal("GENESIS");
   });
+```
 
-  it("should change work flow to end proposals registering", async () => {
+### Testing change work flow to end proposals registering
+
+1. Check revert onlyOwner modifier from openzeppelin
+2. Check revert proposals havent started yet
+3. Change work flow status
+4. Check if event `WorkflowStatusChange` is emit
+
+```
+ it("should change work flow to end proposals registering", async () => {
     await expectRevert(
       contractIstance.endProposalsRegistering({
         from: account1,
@@ -150,7 +173,16 @@ contract("Voting", function (accounts) {
 
     expectEvent(tx, "WorkflowStatusChange");
   });
+```
 
+### Testing change work flow to start voting session
+
+1. Check revert onlyOwner modifier from openzeppelin
+2. Check revert proposals registering is not finished.
+3. Change work flow status
+4. Check if event `WorkflowStatusChange` is emit
+
+```
   it("should change work flow to start voting session", async () => {
     await expectRevert(
       contractIstance.startVotingSession({
@@ -170,7 +202,16 @@ contract("Voting", function (accounts) {
     const tx = await contractIstance.startVotingSession();
     expectEvent(tx, "WorkflowStatusChange");
   });
+```
 
+### Testing change work flow to end voting session
+
+1. Check revert onlyOwner modifier from openzeppelin
+2. Check revert VotingSessionNotStarted.
+3. Change work flow status
+4. Check if event `WorkflowStatusChange` is emit
+
+```
   it("should change work flow to end voting session", async () => {
     await expectRevert(
       contractIstance.endVotingSession({
@@ -192,6 +233,24 @@ contract("Voting", function (accounts) {
     expectEvent(tx, "WorkflowStatusChange");
   });
 
+```
+
+### Testing tally votes
+
+1. Check revert onlyOwner modifier from openzeppelin
+2. Check revert work flow status is not voting session ended.
+3. Check if `winningProposalID` is equal 0 (Defaul value)
+4. Add voter (owner)
+5. Change workflow status
+6. Add proposal
+7. Change workflow status
+8. Set vote to 1
+9. Change workflow status
+10. Call `tallyVotes`
+11. Check if `WorkflowStatusChange` is emit
+12. Check if `winningProposalID` has change and if is equal 1
+
+```
   it("should tally votes", async () => {
     await expectRevert(
       contractIstance.tallyVotes({ from: account1 }),
@@ -219,4 +278,4 @@ contract("Voting", function (accounts) {
     winner = (await contractIstance.winningProposalID.call()).words[0];
     expect(new BN(winner)).to.be.bignumber.equal(one);
   });
-});
+```
