@@ -2,6 +2,8 @@
 
 ### Testing revert for `getVoter()` & `getOneProposal(uint)`
 
+[code here](https://github.com/davidcordeiro5/cicd-sc-voting/blob/main/test/voting.test.js#L26)
+
 ```
    it("should revert because onlyVoters modifier is used", async () => {
     const r = await expectRevert(
@@ -19,6 +21,8 @@
 4. Check if the event is emit
 5. Get voter and check if voter is registered
 6. Change `WorkflowStatus` and check the revert sorkflow status
+
+[code here](https://github.com/davidcordeiro5/cicd-sc-voting/blob/main/test/voting.test.js#L41)
 
 ```
  it("should add voter", async () => {
@@ -52,6 +56,8 @@
 5. Check if `ProposalRegistered` event id emit
 6. Get proposal by `Id`
 7. Expect proposal description
+
+[code here](https://github.com/davidcordeiro5/cicd-sc-voting/blob/main/test/voting.test.js#L62)
 
 ```
   it("should add proposal", async () => {
@@ -89,6 +95,8 @@
 5. Check revert if `proposalId` does't exists
 6. Check proposal `voteCount` after and before the `setVote`
 7. Check if Voted event id emit
+
+[code here](https://github.com/davidcordeiro5/cicd-sc-voting/blob/main/test/voting.test.js#L86)
 
 ```
   it("should set a vote", async () => {
@@ -129,6 +137,8 @@
 5. Check if `WorkflowStatusChange` is emit
 6. Check if the proposal genesis was create
 
+[code here](https://github.com/davidcordeiro5/cicd-sc-voting/blob/main/test/voting.test.js#L113)
+
 ```
 it("should change work flow to start proposals registering", async () => {
     await contractIstance.addVoter(owner);
@@ -153,6 +163,8 @@ it("should change work flow to start proposals registering", async () => {
 2. Check revert proposals havent started yet
 3. Change work flow status
 4. Check if event `WorkflowStatusChange` is emit
+
+[code here](https://github.com/davidcordeiro5/cicd-sc-voting/blob/main/test/voting.test.js#L136)
 
 ```
  it("should change work flow to end proposals registering", async () => {
@@ -182,6 +194,8 @@ it("should change work flow to start proposals registering", async () => {
 3. Change work flow status
 4. Check if event `WorkflowStatusChange` is emit
 
+[code here](https://github.com/davidcordeiro5/cicd-sc-voting/blob/main/test/voting.test.js#L155)
+
 ```
   it("should change work flow to start voting session", async () => {
     await expectRevert(
@@ -210,6 +224,8 @@ it("should change work flow to start proposals registering", async () => {
 2. Check revert VotingSessionNotStarted.
 3. Change work flow status
 4. Check if event `WorkflowStatusChange` is emit
+
+[code here](https://github.com/davidcordeiro5/cicd-sc-voting/blob/main/test/voting.test.js#L175)
 
 ```
   it("should change work flow to end voting session", async () => {
@@ -249,6 +265,8 @@ it("should change work flow to start proposals registering", async () => {
 10. Call `tallyVotes`
 11. Check if `WorkflowStatusChange` is emit
 12. Check if `winningProposalID` has change and if is equal 1
+
+[code here](https://github.com/davidcordeiro5/cicd-sc-voting/blob/main/test/voting.test.js#L197)
 
 ```
   it("should tally votes", async () => {
